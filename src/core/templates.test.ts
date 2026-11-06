@@ -11,6 +11,7 @@ import {
   clampOffset,
   slotRect,
   MAX_OFFSET_IN,
+  firstPrintableTemplate,
 } from "./templates";
 
 describe("Avery 5160 geometry, lifted from the Commerce Center", () => {
@@ -94,6 +95,14 @@ describe("Avery 8257, the lead template", () => {
     const last = slotRect(l, 30);
     expect(last.xIn + last.widthIn).toBeLessThanOrEqual(PAGE.widthIn);
     expect(last.yIn + last.heightIn).toBeLessThanOrEqual(PAGE.heightIn);
+  });
+});
+
+describe("first printable template", () => {
+  it("is the lead template when it can print, otherwise the next that can", () => {
+    const expected = isPrintable(TEMPLATES.avery8257) ? "avery8257" : "avery5160";
+    expect(firstPrintableTemplate()).toBe(expected);
+    expect(isPrintable(TEMPLATES[firstPrintableTemplate()])).toBe(true);
   });
 });
 

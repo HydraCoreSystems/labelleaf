@@ -11,7 +11,7 @@ import {
   saveState,
   type KeyValueStore,
 } from "./storage";
-import { TEMPLATES, resolveOffsets } from "../core/templates";
+import { TEMPLATES, firstPrintableTemplate, resolveOffsets } from "../core/templates";
 
 /** A store backed by a real file, so a test can close and reopen it like the app does. */
 class FileStore implements KeyValueStore {
@@ -34,10 +34,10 @@ class FileStore implements KeyValueStore {
 }
 
 describe("saving and loading", () => {
-  it("starts empty with the lead template and no usual genus", async () => {
+  it("starts empty on the first template that can print, with no usual genus", async () => {
     const s = await loadState(new MemoryStore());
     expect(s).toEqual(defaultState());
-    expect(s.settings).toEqual({ templateId: "avery8257", usualGenus: "" });
+    expect(s.settings).toEqual({ templateId: firstPrintableTemplate(), usualGenus: "" });
     expect(s.queue).toEqual([]);
   });
 
@@ -88,8 +88,8 @@ describe("sanitizeState", () => {
     expect(s.queue.map((e) => e.id)).toEqual(["a"]);
   });
 
-  it("falls back to the lead template for an unknown template id", () => {
-    expect(sanitizeState({ settings: { templateId: "nope" } }).settings.templateId).toBe("avery8257");
+  it("falls back to the first printable template for an unknown template id", () => {
+    expect(sanitizeState({ settings: { templateId: "nope" } }).settings.templateId).toBe(firstPrintableTemplate());
   });
 
   it("ignores offsets that are not numbers and clamps ones that are too large", () => {

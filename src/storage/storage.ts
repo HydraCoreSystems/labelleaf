@@ -1,4 +1,4 @@
-import { DEFAULT_TEMPLATE, TEMPLATES, clampOffset, type Offsets, type TemplateId } from "../core/templates";
+import { TEMPLATES, clampOffset, firstPrintableTemplate, type Offsets, type TemplateId } from "../core/templates";
 import type { QueueEntry } from "../queue/queue";
 
 /** The small slice of storage the app needs. AsyncStorage fits it as is. */
@@ -40,7 +40,7 @@ export interface PersistedState {
 export const STATE_KEY = "labelleaf.state.v1";
 
 export function defaultState(): PersistedState {
-  return { version: 1, queue: [], settings: { templateId: DEFAULT_TEMPLATE, usualGenus: "" }, offsets: {} };
+  return { version: 1, queue: [], settings: { templateId: firstPrintableTemplate(), usualGenus: "" }, offsets: {} };
 }
 
 function isEntry(v: unknown): v is QueueEntry {

@@ -144,6 +144,15 @@ export function isPrintable(t: TemplateDef): boolean {
   return t.layout !== null && t.content !== null;
 }
 
+/**
+ * The template a fresh install starts on: the lead template when it can
+ * print, otherwise the next one that can. When the 8257 grid is entered this
+ * moves to 8257 on its own.
+ */
+export function firstPrintableTemplate(): TemplateId {
+  return TEMPLATE_ORDER.find((id) => isPrintable(TEMPLATES[id])) ?? DEFAULT_TEMPLATE;
+}
+
 /** The grower's remembered offsets if any, otherwise the template defaults. */
 export function resolveOffsets(t: TemplateDef, stored?: Offsets | null): Offsets {
   if (stored && Number.isFinite(stored.xIn) && Number.isFinite(stored.yIn)) {
@@ -218,3 +227,6 @@ export const MIN_FONT_PT = 5;
 export function inToPt(inches: number): number {
   return inches * POINTS_PER_INCH;
 }
+
+/** Space kept between line two and the cutting mark on the same row. New in LabelLeaf. */
+export const MARK_GAP_IN = 0.06;

@@ -8,6 +8,11 @@ export const COPY = {
   queue: {
     title: "Your labels",
     empty: "No labels yet. Tap Add a name to start.",
+    emptyTitle: "Your bench is clear",
+    reorder: "Drag to reorder",
+    moveTitle: "Move this label",
+    moveUp: "Move up",
+    moveDown: "Move down",
     add: "Add a name",
     print: "Print labels",
     export: "Export spreadsheet",
@@ -38,6 +43,15 @@ export const COPY = {
     keep: "Keep exactly as typed",
     nothing: "Start typing to see suggestions.",
     save: "Save",
+    keepNote: "You can always keep a name exactly as you typed it.",
+    removeFromList: "Remove from list",
+    previewTitle: "How it will look",
+  },
+
+  badge: {
+    format: "Format",
+    kew: "Kew",
+    cultivar: "Cultivar register",
   },
 
   cuttings: {
@@ -46,6 +60,12 @@ export const COPY = {
     startAt: "First mark number",
     help: "Each cutting gets its own label with its own mark, like C08.",
     add: "Add labels",
+    fewer: "Fewer",
+    more: "More",
+    lower: "Lower",
+    higher: "Higher",
+    chipCaption: (count: number, last: string | number) =>
+      count === 1 ? `1 label. Its mark is ${last}.` : `${count} labels. The last mark is ${last}.`,
     marks: (first: number, last: number) => {
       const m = (n: number) => `C${String(n).padStart(2, "0")}`;
       return first === last ? `This makes ${m(first)}.` : `This makes ${m(first)} to ${m(last)}.`;
@@ -73,7 +93,15 @@ export const COPY = {
     noLabels: "Add a name first.",
     failed: "Printing did not start. Try again.",
     tipTitle: "Before you print",
-    tip: "Print at 100 percent. Choose Actual Size and turn off Fit to Page. Load the label sheet with the sticky side where your printer expects it. If labels land off center, use Calibrate.",
+    tip: "Load the label sheet with the sticky side where your printer expects it. If labels land off center, use Calibrate.",
+    // Each part is [words, bold].
+    actualSize: [
+      ["Print at ", false],
+      ["100 percent", true],
+      [". Choose ", false],
+      ["Actual Size", true],
+      [" and turn off Fit to Page.", false],
+    ] as readonly (readonly [string, boolean])[],
     calibrate: "Calibrate",
   },
 
@@ -92,6 +120,8 @@ export const COPY = {
     moveUp: "Move up",
     moveDown: "Move down",
     current: "Where the crosses are now",
+    axes: "Left and right move it sideways. Up and down move it up and down.",
+    steps: "Three steps",
     heading: "LabelLeaf test sheet",
     notReady: "This sheet cannot print yet, so it cannot be calibrated. Pick another sheet in Print.",
     failed: "The test sheet did not start. Try again.",
@@ -99,6 +129,7 @@ export const COPY = {
 
   settings: {
     title: "Settings",
+    benchTitle: "Your bench",
     usualGenus: "Your usual genus",
     usualGenusHelp: "Optional. When you type just a species, LabelLeaf suggests this genus. It never adds it for you.",
     usualGenusPlaceholder: "For example, Hoya",
@@ -108,6 +139,7 @@ export const COPY = {
     kewNone: "Kew names are not loaded yet. Names stay as you type them.",
     kewSome: (genera: string[], version: string | null) =>
       `Kew names are loaded for ${genera.join(", ")}${version ? `. Version ${version}.` : "."}`,
+    kewVersion: (version: string | null) => (version ? `Kew names version: ${version}.` : "Kew names are not loaded yet."),
     registerNone: "Cultivar registers are not loaded yet.",
     registerSome: (genera: string[]) => `Cultivar registers are loaded for ${genera.join(", ")}.`,
     privacy: "Everything stays on this phone. There is no account and no server.",
@@ -124,4 +156,13 @@ export function describeOffset(xIn: number, yIn: number): { sideways: string; ve
   const side = xIn === 0 ? "Centered" : `${xIn > 0 ? "Right" : "Left"} ${amount(xIn)} in`;
   const vert = yIn === 0 ? "Centered" : `${yIn > 0 ? "Down" : "Up"} ${amount(yIn)} in`;
   return { sideways: side, vertical: vert };
+}
+
+/** Shorter words for the small center tile on the Calibrate screen. */
+export function describeOffsetShort(xIn: number, yIn: number): { sideways: string; vertical: string } {
+  const amount = (n: number) => Math.abs(n).toFixed(2);
+  return {
+    sideways: xIn === 0 ? "Centered" : `${xIn > 0 ? "Right" : "Left"} ${amount(xIn)}`,
+    vertical: yIn === 0 ? "Centered" : `${yIn > 0 ? "Down" : "Up"} ${amount(yIn)}`,
+  };
 }

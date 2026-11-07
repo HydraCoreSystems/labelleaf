@@ -1,11 +1,11 @@
 import React from "react";
-import { ScrollView, StyleSheet, TextInput } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CULTIVARS, KEW, coveredGenera } from "../data";
 import { useApp } from "../state/AppState";
-import { Card, Heading, Note } from "../ui/components";
+import { Body, Caption, Card, Heading, Input, Note, Pill } from "../ui/components";
 import { COPY } from "../ui/copy";
-import { theme } from "../ui/theme";
+import { fonts, space, theme } from "../ui/theme";
 
 export default function SettingsScreen() {
   const { state, setUsualGenus } = useApp();
@@ -15,30 +15,46 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={["bottom"]}>
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <Heading>{COPY.settings.usualGenus}</Heading>
-        <TextInput
-          value={state.settings.usualGenus}
-          onChangeText={setUsualGenus}
-          placeholder={COPY.settings.usualGenusPlaceholder}
-          placeholderTextColor={theme.muted}
-          autoCapitalize="words"
-          autoCorrect={false}
-          style={styles.input}
-        />
-        <Note>{COPY.settings.usualGenusHelp}</Note>
-
-        <Card style={styles.card}>
-          <Heading>{COPY.settings.guidanceTitle}</Heading>
-          <Note>{COPY.settings.guidance}</Note>
+        <Card style={styles.group}>
+          <Heading first rule>{COPY.settings.benchTitle}</Heading>
+          <Body style={styles.label}>{COPY.settings.usualGenus}</Body>
+          <Input
+            value={state.settings.usualGenus}
+            onChangeText={setUsualGenus}
+            placeholder={COPY.settings.usualGenusPlaceholder}
+            autoCapitalize="words"
+            autoCorrect={false}
+          />
+          <View style={styles.help}>
+            <Note>{COPY.settings.usualGenusHelp}</Note>
+          </View>
         </Card>
 
-        <Card>
-          <Heading>{COPY.settings.dataTitle}</Heading>
-          <Note>{kewGenera.length ? COPY.settings.kewSome(kewGenera, KEW.version) : COPY.settings.kewNone}</Note>
-          <Note>{registerGenera.length ? COPY.settings.registerSome(registerGenera) : COPY.settings.registerNone}</Note>
+        <Card style={styles.group}>
+          <Heading first rule>{COPY.settings.guidanceTitle}</Heading>
+          <Body>{COPY.settings.guidance}</Body>
         </Card>
 
-        <Note>{COPY.settings.privacy}</Note>
+        <Card style={styles.group}>
+          <Heading first rule>{COPY.settings.dataTitle}</Heading>
+          {kewGenera.length ? (
+            <>
+              <View style={styles.pills}>
+                {kewGenera.map((g) => (
+                  <Pill key={g} label={g} />
+                ))}
+              </View>
+              <Caption style={styles.version}>{COPY.settings.kewVersion(KEW.version)}</Caption>
+            </>
+          ) : (
+            <Body>{COPY.settings.kewNone}</Body>
+          )}
+          <View style={styles.register}>
+            <Body>{registerGenera.length ? COPY.settings.registerSome(registerGenera) : COPY.settings.registerNone}</Body>
+          </View>
+        </Card>
+
+        <Text style={styles.privacy}>{COPY.settings.privacy}</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -46,16 +62,12 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.bg },
-  body: { padding: 16 },
-  card: { marginTop: 18 },
-  input: {
-    backgroundColor: theme.card,
-    borderColor: theme.border,
-    borderWidth: 1,
-    borderRadius: theme.radius,
-    padding: 12,
-    fontSize: 17,
-    color: theme.text,
-    marginBottom: 8,
-  },
+  body: { padding: 16, paddingBottom: 32 },
+  group: { marginBottom: space.group },
+  label: { marginBottom: 8 },
+  help: { marginTop: 8 },
+  pills: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  version: { marginTop: 12 },
+  register: { marginTop: 16 },
+  privacy: { fontFamily: fonts.displayItalic, fontSize: 14, lineHeight: 20, color: theme.muted, textAlign: "center", marginTop: 4 },
 });

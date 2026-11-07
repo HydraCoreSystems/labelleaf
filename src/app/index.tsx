@@ -1,15 +1,20 @@
 import { router } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
-import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Animated, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TEMPLATES, isPrintable, resolveOffsets } from "../core/templates";
 import { preflightLabels } from "../pdf/sheet";
-import { queueToCsv, toLabelContent } from "../queue/queue";
+import { dragTarget } from "../queue/reorder";
+import { queueToCsv, toLabelContent, type QueueEntry } from "../queue/queue";
 import { shareCsv } from "../services/output";
 import { useApp } from "../state/AppState";
-import { Button, Card, Note } from "../ui/components";
+import { Button, Caption, EmptyState, LabelPreview, Note, ScreenTitle } from "../ui/components";
 import { COPY } from "../ui/copy";
-import { theme } from "../ui/theme";
+import { DragHandle } from "../ui/DragHandle";
+import { Mark, ScissorsIcon } from "../ui/icons";
+import { theme, type } from "../ui/theme";
+
+const CARD_GAP = 12;
 
 export default function QueueScreen() {
   const { state, remove, move, clearQueue } = useApp();
@@ -19,6 +24,7 @@ export default function QueueScreen() {
   const offsets = useMemo(() => resolveOffsets(template, stored), [template, stored]);
   const [tooLong, setTooLong] = useState<Set<number>>(new Set());
   const [message, setMessage] = useState("");
+  const [dragging, setDragging] = useState(false);
 
   // Check every label against the real sheet, so a name that will not fit is flagged here.
   useEffect(() => {
@@ -55,70 +61,153 @@ export default function QueueScreen() {
     ]);
   }
 
+  const empty = queue.length === 0;
+
   return (
     <SafeAreaView style={styles.screen} edges={["bottom"]}>
       <FlatList
         data={queue}
         keyExtractor={(e) => e.id}
+        scrollEnabled={!dragging}
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Button label={COPY.queue.add} onPress={() => router.push("/add")} />
-            <View style={styles.headerRow}>
-              <Text style={styles.count}>{COPY.queue.count(queue.length)}</Text>
-              <Button small kind="plain" label={COPY.queue.settings} onPress={() => router.push("/settings")} />
+            <View style={styles.brandRow}>
+              <View style={styles.brand}>
+                <Mark size={28} />
+                <Text style={type.wordmark}>{COPY.appName}</Text>
+              </View>
+              <Button kind="plain" label={COPY.queue.settings} onPress={() => router.push("/settings")} />
             </View>
-            {tooLong.size > 0 && <Note tone="warn">{COPY.queue.tooLongMany(tooLong.size)}</Note>}
+            <ScreenTitle rule>{COPY.queue.title}</ScreenTitle>
+            <Caption style={styles.count}>{COPY.queue.count(queue.length)}</Caption>
+            {!empty && <Button label={COPY.queue.add} onPress={() => router.push("/add")} />}
+            {tooLong.size > 0 && <View style={styles.warn}><Note tone="warn">{COPY.queue.tooLongMany(tooLong.size)}</Note></View>}
           </View>
         }
-        ListEmptyComponent={<Note>{COPY.queue.empty}</Note>}
+        ListEmptyComponent={
+          <EmptyState
+            title={COPY.queue.emptyTitle}
+            note={COPY.queue.empty}
+            action={<Button label={COPY.queue.add} onPress={() => router.push("/add")} />}
+          />
+        }
         renderItem={({ item, index }) => (
-          <Card>
-            <View style={styles.entryTop}>
-              <View style={styles.entryText}>
-                <Text style={styles.line1}>{item.line1 || " "}</Text>
-                {item.line2 ? <Text style={styles.line2}>{item.line2}</Text> : null}
-              </View>
-              {item.mark ? <Text style={styles.mark}>{item.mark}</Text> : null}
-            </View>
-            {tooLong.has(index) && <Note tone="warn">{COPY.queue.tooLongOne}</Note>}
-            <View style={styles.actions}>
-              <Button small kind="plain" label={COPY.queue.edit} onPress={() => router.push({ pathname: "/add", params: { id: item.id } })} />
-              {item.kind === "plant" && (
-                <Button small kind="plain" label={COPY.queue.cuttings} onPress={() => router.push({ pathname: "/cuttings", params: { id: item.id } })} />
-              )}
-              <Button small kind="plain" label={COPY.queue.up} disabled={index === 0} onPress={() => move(item.id, index - 1)} />
-              <Button small kind="plain" label={COPY.queue.down} disabled={index === queue.length - 1} onPress={() => move(item.id, index + 1)} />
-              <Button small kind="danger" label={COPY.queue.remove} onPress={() => remove(item.id)} />
-            </View>
-          </Card>
+          <QueueCard
+            item={item}
+            index={index}
+            count={queue.length}
+            tooLong={tooLong.has(index)}
+            onDragState={setDragging}
+            onMove={(to) => move(item.id, to)}
+          />
         )}
         ListFooterComponent={
-          <View style={styles.footer}>
-            {message ? <Note tone="warn">{message}</Note> : null}
-            <Button label={COPY.queue.print} disabled={queue.length === 0} onPress={() => router.push("/print")} />
-            <View style={styles.gap} />
-            <Button kind="plain" label={COPY.queue.export} disabled={queue.length === 0} onPress={exportCsv} />
-            <Button kind="plain" label={COPY.queue.clear} disabled={queue.length === 0} onPress={confirmClear} />
+          empty ? undefined : (
+            <View style={styles.footer}>
+              {message ? <Note tone="warn">{message}</Note> : null}
+              <Button kind="secondary" label={COPY.queue.export} onPress={exportCsv} />
+              <View style={styles.apart} />
+              <Button kind="danger" label={COPY.queue.clear} onPress={confirmClear} />
+            </View>
+          )
+        }
+      />
+      <View style={styles.bar}>
+        <Button tall label={COPY.queue.print} disabled={empty} onPress={() => router.push("/print")} />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function QueueCard({
+  item,
+  index,
+  count,
+  tooLong,
+  onDragState,
+  onMove,
+}: {
+  item: QueueEntry;
+  index: number;
+  count: number;
+  tooLong: boolean;
+  onDragState: (dragging: boolean) => void;
+  onMove: (toIndex: number) => void;
+}) {
+  const y = useRef(new Animated.Value(0)).current;
+  const height = useRef(0);
+  const [lifted, setLifted] = useState(false);
+
+  function menu() {
+    Alert.alert(COPY.queue.moveTitle, undefined, [
+      ...(index > 0 ? [{ text: COPY.queue.moveUp, onPress: () => onMove(index - 1) }] : []),
+      ...(index < count - 1 ? [{ text: COPY.queue.moveDown, onPress: () => onMove(index + 1) }] : []),
+      { text: COPY.queue.cancel, style: "cancel" as const },
+    ]);
+  }
+
+  return (
+    <Animated.View
+      onLayout={(e) => (height.current = e.nativeEvent.layout.height + CARD_GAP)}
+      style={{ transform: [{ translateY: y }], zIndex: lifted ? 10 : 0, opacity: lifted ? 0.92 : 1 }}
+    >
+      {/* Long press anywhere on the card opens a move menu, for growers who cannot drag. */}
+      <Pressable accessible={false} onLongPress={menu} delayLongPress={450}>
+      <LabelPreview
+        line1={item.line1}
+        line2={item.line2}
+        mark={item.mark}
+        right={
+          <DragHandle
+            translateY={y}
+            label={COPY.queue.reorder}
+            onStart={() => {
+              setLifted(true);
+              onDragState(true);
+            }}
+            onDrop={(dy) => {
+              const to = dragTarget(index, dy, height.current, count);
+              y.setValue(0);
+              setLifted(false);
+              onDragState(false);
+              if (to !== index) onMove(to);
+            }}
+          />
+        }
+        footer={
+          <View>
+            {tooLong && <Note tone="warn">{COPY.queue.tooLongOne}</Note>}
+            <View style={styles.actions}>
+              <Button small kind="secondary" label={COPY.queue.edit} onPress={() => router.push({ pathname: "/add", params: { id: item.id } })} />
+              {item.kind === "plant" && (
+                <Button
+                  small
+                  kind="secondary"
+                  icon={<ScissorsIcon />}
+                  label={COPY.queue.cuttings}
+                  onPress={() => router.push({ pathname: "/cuttings", params: { id: item.id } })}
+                />
+              )}
+            </View>
           </View>
         }
       />
-    </SafeAreaView>
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.bg },
-  list: { padding: 16 },
-  header: { marginBottom: 12 },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
-  count: { fontSize: 15, color: theme.muted },
-  entryTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  entryText: { flex: 1, paddingRight: 8 },
-  line1: { fontSize: 17, fontWeight: "700", color: theme.text },
-  line2: { fontSize: 15, fontStyle: "italic", color: theme.muted, marginTop: 2 },
-  mark: { fontSize: 15, fontWeight: "700", color: theme.accent, fontVariant: ["tabular-nums"] },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 },
+  list: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 16 },
+  header: { marginBottom: 16 },
+  brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  brand: { flexDirection: "row", alignItems: "center", gap: 8 },
+  count: { marginTop: 6, marginBottom: 16 },
+  warn: { marginTop: 12 },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   footer: { marginTop: 8 },
-  gap: { height: 8 },
+  apart: { height: 16 },
+  bar: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8, backgroundColor: theme.bg, borderTopWidth: 1, borderTopColor: theme.border },
 });

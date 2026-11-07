@@ -1,29 +1,29 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { nextCuttingSeq } from "../queue/queue";
+import { MAX_RUN, nextCuttingSeq } from "../queue/queue";
 import { useApp } from "../state/AppState";
-import { Button, Card, Heading, Note } from "../ui/components";
+import { Button, Caption, Chip, LabelPreview, Note, StepperRow } from "../ui/components";
 import { COPY } from "../ui/copy";
 import { theme } from "../ui/theme";
+
+const MAX_CHIPS = 6;
+
+const markFor = (n: number) => `C${String(n).padStart(2, "0")}`;
 
 export default function CuttingsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, addRun } = useApp();
   const parent = state.queue.find((e) => e.id === id);
-  const [count, setCount] = useState("5");
-  const [start, setStart] = useState(String(parent ? nextCuttingSeq(state.queue, parent.id) : 1));
+  const [count, setCount] = useState(5);
+  const [start, setStart] = useState(parent ? nextCuttingSeq(state.queue, parent.id) : 1);
   const [error, setError] = useState("");
-
-  const n = parseInt(count, 10);
-  const s = parseInt(start, 10);
-  const preview = Number.isInteger(n) && Number.isInteger(s) && n >= 1 ? COPY.cuttings.marks(s, s + n - 1) : "";
 
   function submit() {
     setError("");
     try {
-      addRun({ parentId: id, count: n, startSeq: s });
+      addRun({ parentId: id, count, startSeq: start });
       router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : COPY.cuttings.help);
@@ -32,24 +32,49 @@ export default function CuttingsScreen() {
 
   if (!parent) return null;
 
+  const last = start + count - 1;
+  const shown = Array.from({ length: Math.min(count, MAX_CHIPS) }, (_, i) => markFor(start + i));
+
   return (
     <SafeAreaView style={styles.screen} edges={["bottom"]}>
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <Card>
-          <Text style={styles.line1}>{parent.line1}</Text>
-          {parent.line2 ? <Text style={styles.line2}>{parent.line2}</Text> : null}
-        </Card>
+        <LabelPreview line1={parent.line1} line2={parent.line2} />
         <Note>{COPY.cuttings.help}</Note>
 
-        <Heading style={styles.label}>{COPY.cuttings.howMany}</Heading>
-        <TextInput value={count} onChangeText={setCount} keyboardType="number-pad" style={styles.input} />
+        <View style={styles.steppers}>
+          <StepperRow
+            title={COPY.cuttings.howMany}
+            value={count}
+            lessLabel={COPY.cuttings.fewer}
+            moreLabel={COPY.cuttings.more}
+            lessDisabled={count <= 1}
+            moreDisabled={start + count > MAX_RUN}
+            onLess={() => setCount((c) => Math.max(1, c - 1))}
+            onMore={() => setCount((c) => Math.min(MAX_RUN - start + 1, c + 1))}
+          />
+          <StepperRow
+            title={COPY.cuttings.startAt}
+            value={start}
+            lessLabel={COPY.cuttings.lower}
+            moreLabel={COPY.cuttings.higher}
+            lessDisabled={start <= 1}
+            moreDisabled={last >= MAX_RUN}
+            onLess={() => setStart((s) => Math.max(1, s - 1))}
+            onMore={() => setStart((s) => Math.min(MAX_RUN - count + 1, s + 1))}
+          />
+        </View>
 
-        <Heading style={styles.label}>{COPY.cuttings.startAt}</Heading>
-        <TextInput value={start} onChangeText={setStart} keyboardType="number-pad" style={styles.input} />
+        <View style={styles.chips}>
+          {shown.map((m) => (
+            <Chip key={m} label={m} />
+          ))}
+        </View>
+        <Caption style={styles.chipCaption}>{COPY.cuttings.chipCaption(count, markFor(last))}</Caption>
 
-        {preview ? <Note>{preview}</Note> : null}
         {error ? <Note tone="warn">{error}</Note> : null}
-        <Button label={COPY.cuttings.add} onPress={submit} />
+        <View style={styles.submit}>
+          <Button label={COPY.cuttings.add} onPress={submit} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -57,18 +82,9 @@ export default function CuttingsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.bg },
-  body: { padding: 16 },
-  label: { marginTop: 14 },
-  input: {
-    backgroundColor: theme.card,
-    borderColor: theme.border,
-    borderWidth: 1,
-    borderRadius: theme.radius,
-    padding: 12,
-    fontSize: 17,
-    color: theme.text,
-    marginBottom: 8,
-  },
-  line1: { fontSize: 17, fontWeight: "700", color: theme.text },
-  line2: { fontSize: 15, fontStyle: "italic", color: theme.muted, marginTop: 2 },
+  body: { padding: 16, paddingBottom: 32 },
+  steppers: { marginTop: 16 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  chipCaption: { marginTop: 10 },
+  submit: { marginTop: 20 },
 });

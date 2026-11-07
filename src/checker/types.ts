@@ -36,7 +36,8 @@ export type OfferLayer = "format" | "kew" | "cultivar" | "usual";
 export interface Offer {
   id: string;
   layer: OfferLayer;
-  name: PlantName;
+  /** Structured fields, or null for a cross formula the fields cannot hold. */
+  name: PlantName | null;
   line1: string;
   line2: string;
   /** Plain words telling the grower why this is offered. */

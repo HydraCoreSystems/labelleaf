@@ -2,7 +2,7 @@ import { composeBotanicalLine1, composeBotanicalLine2, composeDisplayName } from
 import { formCodeFromQualifier, type PlantName } from "../core/types";
 import { checkAgainstRegister } from "./cultivars";
 import { checkAgainstKew } from "./kew";
-import { parseTypedName, splitAsTyped } from "./parse";
+import { crossFormulaLines, parseTypedName, splitAsTyped } from "./parse";
 import { collapseSpaces, straightenQuotes } from "./text";
 import type { CheckOptions, CheckResult, Offer, OfferLayer } from "./types";
 
@@ -38,6 +38,26 @@ export function checkName(typed: string, options: CheckOptions = {}): CheckResul
   const notes: string[] = [];
 
   if (!collapseSpaces(typed)) return { offers, notes, asTyped };
+
+  // A cross between two species cannot be held in the name fields, so it gets
+  // its own format offer. Kew and register checks do not cover crosses yet.
+  const cross = crossFormulaLines(typed);
+  if (cross) {
+    return {
+      offers: [
+        {
+          id: `format:${composeDisplayName(cross.line1, cross.line2)}`,
+          layer: "format",
+          name: null,
+          line1: cross.line1,
+          line2: cross.line2,
+          reason: "Genus capitalized and the cross written with the multiplication sign. Every word is as you typed it.",
+        },
+      ],
+      notes: ["This looks like a cross between two species. Kew checking does not cover crosses yet."],
+      asTyped,
+    };
+  }
 
   // Layer 1: format. Always first.
   const formatted = makeOffer("format", parsed, "");

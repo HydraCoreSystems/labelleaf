@@ -1,3 +1,4 @@
+import { composeBotanicalLine2 } from "../core/naming";
 import { EMPTY_NAME, type PlantName, type Qualifier } from "../core/types";
 import { collapseSpaces, straightenQuotes } from "./text";
 
@@ -78,7 +79,7 @@ export function parseTypedName(raw: string): PlantName {
  * cultivar in lowercase, capitalize each word. Any capital the grower typed
  * is left alone, so names like "de Vries" survive.
  */
-function capitalizeIfAllLowercase(cultivar: string): string {
+export function capitalizeIfAllLowercase(cultivar: string): string {
   if (!cultivar || cultivar !== cultivar.toLowerCase()) return cultivar;
   return cultivar
     .split(" ")
@@ -95,4 +96,25 @@ export function splitAsTyped(raw: string): { line1: string; line2: string } {
   const m = /['"‘“]/.exec(text);
   if (!m || m.index === 0) return { line1: text, line2: "" };
   return { line1: text.slice(0, m.index).trim(), line2: text.slice(m.index).trim() };
+}
+
+/**
+ * A cross between two species, such as "hoya archboldiana x pubicalyx cf.".
+ * The lifted composer only writes "Genus × species", so a cross cannot be
+ * built from fields. Rather than guess a convention, this keeps every word the
+ * grower typed, capitalizes the genus, and writes the mark as the
+ * multiplication sign. Returns null when the text is not a cross.
+ */
+export function crossFormulaLines(raw: string): { line1: string; line2: string } | null {
+  const typed = splitAsTyped(straightenQuotes(raw ?? ""));
+  const words = typed.line1.split(" ").filter(Boolean);
+  const markAt = words.findIndex((w, i) => i >= 2 && HYBRID_MARKS.has(w));
+  if (markAt < 0 || markAt === words.length - 1) return null;
+
+  const line1 = words
+    .map((w, i) => (i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : i >= 2 && HYBRID_MARKS.has(w) ? "\u00D7" : w))
+    .join(" ");
+  const inner = typed.line2.replace(/^['"]+|['"]+$/g, "").trim();
+  const line2 = inner ? composeBotanicalLine2({ cultivar: capitalizeIfAllLowercase(inner), name_type: "Cultivar" }) : "";
+  return { line1, line2 };
 }

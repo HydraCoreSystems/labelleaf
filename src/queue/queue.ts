@@ -144,3 +144,8 @@ export function queueToCsv(queue: QueueEntry[]): string {
   queue.forEach((e, i) => rows.push([String(i + 1), e.line1, e.line2, e.mark ?? "", e.typed]));
   return rows.map((r) => r.map(csvField).join(",")).join("\r\n") + "\r\n";
 }
+
+/** The part of an entry that gets printed on its label. */
+export function toLabelContent(e: QueueEntry): { line1: string; line2: string; mark?: string } {
+  return { line1: e.line1, line2: e.line2, mark: e.mark };
+}

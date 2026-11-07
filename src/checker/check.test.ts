@@ -240,3 +240,36 @@ describe("cultivar capitals", () => {
     expect(parseTypedName("Hoya carnosa 'de Vries'").cultivar).toBe("de Vries");
   });
 });
+
+describe("crosses between two species", () => {
+  it("keeps every typed word and writes the multiplication sign", () => {
+    const r = checkName("hoya archboldiana x pubicalyx cf.");
+    expect(r.offers).toHaveLength(1);
+    expect(r.offers[0].line1).toBe("Hoya archboldiana \u00D7 pubicalyx cf.");
+    expect(r.offers[0].line2).toBe("");
+    expect(r.offers[0].name).toBeNull();
+  });
+
+  it("does not push the second species into the cultivar line", () => {
+    const r = checkName("Hoya carnosa X kerrii 'silver star'");
+    expect(r.offers[0].line1).toBe("Hoya carnosa \u00D7 kerrii");
+    expect(r.offers[0].line2).toBe("'Silver Star'");
+  });
+
+  it("says plainly that Kew does not cover crosses yet, and skips the Kew layer", () => {
+    const r = checkName("Fixtureleaf alpha x bravo", { kew: FIXTURE_KEW });
+    expect(r.notes[0]).toContain("Kew checking does not cover crosses yet");
+    expect(r.offers.map((o) => o.layer)).toEqual(["format"]);
+  });
+
+  it("still treats Genus x species as a hybrid name, not a cross", () => {
+    const r = checkName("hoya x carnosa");
+    expect(r.offers[0].line1).toBe("Hoya \u00D7 carnosa");
+    expect(r.offers[0].name).not.toBeNull();
+    expect(r.notes).toEqual([]);
+  });
+
+  it("is not a cross when nothing follows the mark", () => {
+    expect(checkName("hoya carnosa x").notes).toEqual([]);
+  });
+});

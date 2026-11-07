@@ -16,6 +16,7 @@ const FIXTURE_KEW: KewData = {
       accepted: ["alpha", "bravo", "charlie", "hybridia"],
       hybrids: ["hybridia"],
       synonyms: { oldalpha: "alpha", movedone: "Elsewhere delta" },
+      listed: ["unsure"],
     },
   },
 };
@@ -142,6 +143,24 @@ describe("Kew layer", () => {
   it("marks a hybrid when Kew lists the accepted name as one", () => {
     const r = checkName("Fixtureleaf hybridai", opts);
     expect(r.offers.find((o) => o.layer === "kew")?.line1).toBe("Fixtureleaf × hybridia");
+  });
+
+  it("offers the hybrid mark when Kew lists an accepted name as a hybrid", () => {
+    const r = checkName("Fixtureleaf hybridia", opts);
+    const kew = r.offers.find((o) => o.layer === "kew");
+    expect(kew?.line1).toBe("Fixtureleaf × hybridia");
+    expect(kew?.reason).toContain("as a hybrid");
+  });
+
+  it("does not offer the hybrid mark twice when the grower already typed it", () => {
+    const r = checkName("Fixtureleaf x hybridia", opts);
+    expect(r.offers.map((o) => o.layer)).toEqual(["format"]);
+  });
+
+  it("treats a name Kew lists without an accepted form as known", () => {
+    const r = checkName("Fixtureleaf unsure", opts);
+    expect(r.offers.map((o) => o.layer)).toEqual(["format"]);
+    expect(r.notes).toEqual([]);
   });
 
   it("notes a name Kew does not list, and leaves it as typed", () => {

@@ -103,31 +103,48 @@ const AVERY_5160: TemplateDef = {
 };
 
 /**
- * Avery 8257, the lead template.
+ * Avery 8257, the lead template. Same sheet as Avery 6870.
  *
- * Published facts, from Avery: label 0.75in tall by 2.25in wide, 30 labels per
- * US Letter sheet, same template as Avery 6870.
+ * SOURCED FROM THE PUBLISHED AVERY DIMENSIONS TABLE for template 6870, passed
+ * on by Lotus on 2026-11-06. It is not measured on any printer. US Letter, 3
+ * columns by 10 rows, label 2.25in wide by 0.75in tall, margins top and bottom
+ * 0.625in, left and right 0.375in, horizontal gutter 0.5in (pitch 2.75in),
+ * vertical gutter 0.25in (pitch 1in). The grid closes to the sheet both ways:
+ * 0.375 + 3 x 2.25 + 2 x 0.5 + 0.375 = 8.5, and 0.625 + 10 x 0.75 + 9 x 0.25 +
+ * 0.625 = 11.
  *
- * NOT YET ENTERED: the column and row count, the margins, and the pitches.
- * Avery's public pages do not list them. They come from the blank 6870
- * template PDF. Until they are entered here, the template reports itself as
- * not printable and the app says so. Do not guess these numbers. A wrong grid
- * prints labels off the stickers.
- *
- * The Commerce Center offsets do not carry over. They were measured for the
- * taller 5160 label. Offsets start at zero and the grower tunes them on the
- * calibration screen. A fresh measurement on Phil's own printer is a later
- * phase and nothing here waits on it.
+ * The content box below is a LabelLeaf design choice, not an Avery number: it
+ * leaves 0.1in at the sides and 0.1in above and below inside the die cut, and
+ * the type is not scaled down. The Commerce Center offsets were measured for
+ * the taller 5160 label and do not carry over, so offsets start at zero and
+ * each grower tunes them on the calibration screen. A print check on a real
+ * 8257 sheet is still on the test plan, and a fresh measurement on Phil's own
+ * printer is a later phase. Nothing here waits on it.
  */
 const AVERY_8257: TemplateDef = {
   id: "avery8257",
   name: "Avery 8257",
   stock: "Address labels, 0.75 inch by 2.25 inches, inkjet, 30 per US Letter sheet",
   labelsPerSheet: 30,
-  layout: null,
-  content: null,
+  layout: {
+    columns: 3,
+    rows: 10,
+    labelWidthIn: 2.25,
+    labelHeightIn: 0.75,
+    pitchXIn: 2.75,
+    pitchYIn: 1,
+    marginTopIn: 0.625,
+    marginLeftIn: 0.375,
+  },
+  content: {
+    widthIn: 2.05,
+    heightIn: 0.55,
+    paddingXIn: 0.04,
+    paddingYIn: 0.02,
+    scale: 1,
+  },
   defaultOffsets: { xIn: 0, yIn: 0 },
-  provenance: "Label size and count from Avery. Grid and margins pending the blank 6870 template.",
+  provenance: "Grid from the published Avery 6870 dimensions table. Content box is a design choice. Not yet checked on a real sheet.",
 };
 
 export const TEMPLATES: Record<TemplateId, TemplateDef> = {

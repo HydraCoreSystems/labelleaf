@@ -33,6 +33,9 @@ export function checkAgainstKew(data: KewData, name: PlantName): KewFinding {
     return { kind: "synonym", genus, replacement };
   }
 
+  // Kew lists it, but there is no single accepted name to offer.
+  if (genus.listed?.includes(species)) return { kind: "known", genus };
+
   const limit = typoLimit(species.length);
   const near = genus.accepted
     .map((candidate) => ({ candidate, d: editDistance(species, candidate) }))

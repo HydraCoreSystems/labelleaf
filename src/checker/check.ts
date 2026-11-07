@@ -84,7 +84,13 @@ export function checkName(typed: string, options: CheckOptions = {}): CheckResul
   // Layer 2: Kew.
   if (options.kew && parsed.species) {
     const finding = checkAgainstKew(options.kew, parsed);
-    if (finding.kind === "synonym") {
+    if (finding.kind === "known") {
+      if (finding.genus.hybrids.includes(parsed.species.toLowerCase()) && !parsed.hybrid) {
+        offers.push(
+          makeOffer("kew", { ...parsed, cultivar, hybrid: true }, `Kew lists ${finding.genus.name} ${parsed.species.toLowerCase()} as a hybrid.`)
+        );
+      }
+    } else if (finding.kind === "synonym") {
       const { genus, species } = finding.replacement;
       const isHybrid = finding.genus.hybrids.includes(species);
       offers.push(

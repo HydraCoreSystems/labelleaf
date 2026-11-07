@@ -232,11 +232,46 @@ describe("long names under the tier rules", () => {
   });
 });
 
-describe("templates that cannot print yet", () => {
-  it("refuses Avery 8257 until its sheet grid is entered", async () => {
-    const t = TEMPLATES.avery8257;
-    if (t.layout) return; // grid entered, nothing to refuse
-    await expect(buildLabelPdf({ template: t, offsets: t.defaultOffsets, items: oneLine(1), startSlot: 1 })).rejects.toBeInstanceOf(NotPrintableError);
+describe("templates that cannot print", () => {
+  // A template with no grid entered must refuse, whatever its name. Avery 8257
+  // now has its grid, so this uses a fixture with the grid left out.
+  const NO_GRID: TemplateDef = { ...TEMPLATES.avery5160, layout: null, content: null };
+
+  it("refuses to build labels", async () => {
+    await expect(buildLabelPdf({ template: NO_GRID, offsets: NO_GRID.defaultOffsets, items: oneLine(1), startSlot: 1 })).rejects.toBeInstanceOf(NotPrintableError);
+  });
+});
+
+describe("Avery 8257 prints on its published grid", () => {
+  const T8257 = TEMPLATES.avery8257;
+  const ZERO = { xIn: 0, yIn: 0 };
+
+  it("sets slot 1 and slot 30 labels inside their cells, on one Letter page", async () => {
+    const c = T8257.content!;
+    const l = T8257.layout!;
+    const items = Array.from({ length: 30 }, (_, i) => ({ line1: `Hoya sp${i}`, line2: "" }));
+    const built = await buildLabelPdf({ template: T8257, offsets: ZERO, items, startSlot: 1 });
+    const { pages, sizes } = await readPages(built.bytes);
+    expect(Math.round(sizes[0].w)).toBe(612);
+    expect(Math.round(sizes[0].h)).toBe(792);
+    expect(pages[0]).toHaveLength(30);
+    // Slot 1: left edge is margin + (cell - box) / 2 + padding.
+    const first = pages[0].find((i) => i.str === "Hoya sp0")!;
+    expect(first.x).toBeCloseTo((0.375 + (l.labelWidthIn - c.widthIn) / 2 + c.paddingXIn) * PT, 2);
+    // Slot 30 sits in row 10, column 3: left edge from the published pitch.
+    const last = pages[0].find((i) => i.str === "Hoya sp29")!;
+    expect(last.x).toBeCloseTo((0.375 + 2 * 2.75 + (l.labelWidthIn - c.widthIn) / 2 + c.paddingXIn) * PT, 2);
+    // Its text sits within the cell: below the cell top, above the cell bottom.
+    const cellTop = 792 - (0.625 + 9 * 1) * PT;
+    expect(last.yUp).toBeLessThan(cellTop);
+    expect(last.yUp).toBeGreaterThan(cellTop - 0.75 * PT);
+  });
+
+  it("applies a remembered offset on the 8257", async () => {
+    const base = await readPages((await buildLabelPdf({ template: T8257, offsets: ZERO, items: oneLine(1), startSlot: 1 })).bytes);
+    const moved = await readPages((await buildLabelPdf({ template: T8257, offsets: { xIn: 0.05, yIn: 0.1 }, items: oneLine(1), startSlot: 1 })).bytes);
+    expect(moved.pages[0][0].x - base.pages[0][0].x).toBeCloseTo(0.05 * PT, 2);
+    expect(base.pages[0][0].yUp - moved.pages[0][0].yUp).toBeCloseTo(0.1 * PT, 2);
   });
 });
 
@@ -277,8 +312,7 @@ describe("calibration test sheet", () => {
   });
 
   it("refuses a template that cannot print", async () => {
-    const t = TEMPLATES.avery8257;
-    if (t.layout) return;
+    const t: TemplateDef = { ...TEMPLATES.avery5160, layout: null, content: null };
     await expect(buildCalibrationPdf({ template: t, offsets: t.defaultOffsets, heading: "x" })).rejects.toBeInstanceOf(NotPrintableError);
   });
 });

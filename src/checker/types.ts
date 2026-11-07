@@ -11,6 +11,13 @@ export interface KewGenus {
   hybrids: string[]; // the accepted epithets that are hybrids
   /** synonym epithet to accepted name. A value with a space is "Genus epithet" in another genus. */
   synonyms: Record<string, string>;
+  /**
+   * Epithets Kew lists but that have no single accepted replacement to offer:
+   * unplaced names, misapplied names, and names whose accepted form is below
+   * species rank or outside the covered genera. The checker treats these as
+   * known, so it does not claim Kew has never heard of them.
+   */
+  listed?: string[];
 }
 
 export interface KewData {

@@ -14,12 +14,15 @@ Version one, iPhone first. Built from LABEL_APP_BUILD_BRIEF_2026-11-06.md.
 - Copy rules enforced by tests: all fixed text lives in src/ui/copy.ts with no dashes.
 - iOS bundle compiles with Metro (1,382 modules).
 
+## Data and templates now in
+
+- Kew data: WCVP v16 (extracted June 4, 2026), from wcvp_trade_extract.csv. 17,951 rows, 31 columns, pipe delimited, all checked. Bundled for Hoya plus Dischidia, Ceropegia, Stephanotis, Monstera, Philodendron, Epipremnum, Syngonium, Anthurium, Alocasia, Peperomia, Begonia, Phalaenopsis, Dendrobium, Cattleya and Calathea. The importer treats Artificial Hybrid as accepted, keeps unplaced and misapplied names as listed, and offers nothing when two names share an epithet and point apart.
+- Avery 8257 is printable, on the grid from the published Avery 6870 dimensions table. The content box inside each label is a LabelLeaf design choice. A print on a real 8257 sheet is still to do.
+
 ## Waiting on Lotus
 
-- Avery 8257 grid. Registered but not printable, and the app says so. Needs the blank Avery 6870 template PDF. Enter the layout and content box in src/core/templates.ts, then mark 8257 printable.
-- Kew data. src/data/kew.json is empty. Run `npm run build:kew` with wcvp_names.csv and the genera to cover.
-- Cultivar register data. src/data/cultivars.json is empty. Needs the genera, register names and sources.
-- Empty private repo HydraCoreSystems/labelleaf with push access.
+- Cultivar register data. src/data/cultivars.json is empty. The only sourced register so far is the Hoya cultivar register at hoyacultivars.org (edited by Rachel Conroy). It goes in once its list can be obtained in usable form. Nothing is invented.
+- Empty private repo HydraCoreSystems/labelleaf with push access. Blocked on Phil reconnecting GitHub. Commits stay local until then.
 - iOS bundle identifier and Apple team, for packaging.
 
 ## Only a real device or real print can verify

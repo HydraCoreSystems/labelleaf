@@ -80,28 +80,53 @@ describe("Avery 8257, the lead template", () => {
     expect(t.defaultOffsets).toEqual({ xIn: 0, yIn: 0 });
   });
 
-  // Reports the honest state of the build. When the grid and margins from the
-  // blank 6870 template are entered, this flips and the next test takes over.
-  it("reports whether the sheet grid has been entered", () => {
-    expect(isPrintable(t)).toBe(t.layout !== null && t.content !== null);
+  it("is printable, with the grid from the published Avery 6870 table", () => {
+    expect(isPrintable(t)).toBe(true);
+    expect(t.layout).toEqual({
+      columns: 3,
+      rows: 10,
+      labelWidthIn: 2.25,
+      labelHeightIn: 0.75,
+      pitchXIn: 2.75,
+      pitchYIn: 1,
+      marginTopIn: 0.625,
+      marginLeftIn: 0.375,
+    });
+    expect(t.provenance).toContain("published Avery");
   });
 
-  it("once a grid is entered, it is a 30 slot grid that fits US Letter", () => {
-    if (!t.layout) return;
-    const l = t.layout;
-    expect(l.columns * l.rows).toBe(30);
-    expect(l.labelWidthIn).toBe(2.25);
-    expect(l.labelHeightIn).toBe(0.75);
+  it("closes to the US Letter sheet both ways", () => {
+    const l = t.layout!;
+    const gutterX = l.pitchXIn - l.labelWidthIn;
+    const gutterY = l.pitchYIn - l.labelHeightIn;
+    expect(gutterX).toBe(0.5);
+    expect(gutterY).toBe(0.25);
+    // The right and bottom margins equal the left and top ones on the published table.
+    expect(l.marginLeftIn * 2 + l.columns * l.labelWidthIn + (l.columns - 1) * gutterX).toBeCloseTo(PAGE.widthIn, 9);
+    expect(l.marginTopIn * 2 + l.rows * l.labelHeightIn + (l.rows - 1) * gutterY).toBeCloseTo(PAGE.heightIn, 9);
+  });
+
+  it("places the corner slots where the table says", () => {
+    const l = t.layout!;
+    expect(slotRect(l, 1)).toMatchObject({ row: 1, col: 1, xIn: 0.375, yIn: 0.625 });
+    expect(slotRect(l, 3)).toMatchObject({ row: 1, col: 3, xIn: 5.875, yIn: 0.625 });
+    expect(slotRect(l, 30)).toMatchObject({ row: 10, col: 3, xIn: 5.875, yIn: 9.625 });
     const last = slotRect(l, 30);
-    expect(last.xIn + last.widthIn).toBeLessThanOrEqual(PAGE.widthIn);
-    expect(last.yIn + last.heightIn).toBeLessThanOrEqual(PAGE.heightIn);
+    expect(last.xIn + last.widthIn).toBeCloseTo(8.125, 9);
+    expect(last.yIn + last.heightIn).toBeCloseTo(10.375, 9);
+  });
+
+  it("keeps its content box inside the label", () => {
+    const l = t.layout!;
+    const c = t.content!;
+    expect(c.widthIn).toBeLessThanOrEqual(l.labelWidthIn);
+    expect(c.heightIn).toBeLessThanOrEqual(l.labelHeightIn);
   });
 });
 
 describe("first printable template", () => {
-  it("is the lead template when it can print, otherwise the next that can", () => {
-    const expected = isPrintable(TEMPLATES.avery8257) ? "avery8257" : "avery5160";
-    expect(firstPrintableTemplate()).toBe(expected);
+  it("is the lead template now that 8257 can print", () => {
+    expect(firstPrintableTemplate()).toBe("avery8257");
     expect(isPrintable(TEMPLATES[firstPrintableTemplate()])).toBe(true);
   });
 });

@@ -21,6 +21,11 @@ export const REQUIRED_COLUMNS = [
 ] as const;
 
 const SYNONYM_STATUSES = new Set(["Synonym", "Orthographic", "Illegitimate", "Invalid"]);
+// Kew marks named artificial hybrids "Artificial Hybrid". They are the accepted
+// name for themselves, so they count as accepted and as hybrids.
+const ACCEPTED_STATUSES = new Set(["Accepted", "Artificial Hybrid"]);
+// Listed by Kew with no accepted name to point to.
+const LISTED_ONLY_STATUSES = new Set(["Unplaced", "Misapplied"]);
 
 export type WcvpRow = Record<string, string>;
 
@@ -80,7 +85,8 @@ export class WcvpAccumulator {
       status: row.taxon_status,
       genus: row.genus,
       species: row.species.toLowerCase(),
-      hybrid: row.species_hybrid === "×" || row.species_hybrid === "x" || row.genus_hybrid === "×",
+      hybrid:
+        row.species_hybrid === "×" || row.species_hybrid === "x" || row.genus_hybrid === "×" || row.taxon_status === "Artificial Hybrid",
       acceptedId: row.accepted_plant_name_id,
     });
   }
@@ -109,26 +115,46 @@ export class WcvpAccumulator {
 
   build(source: string, version: string): KewData {
     const genera: Record<string, KewGenus> = {};
+    // Per genus: every target a synonym epithet points to, to catch homonyms.
+    const targets: Record<string, Map<string, Set<string>>> = {};
+    const listed: Record<string, Set<string>> = {};
     for (const [key, display] of this.covered) {
-      genera[key] = { name: display, accepted: [], hybrids: [], synonyms: {} };
+      genera[key] = { name: display, accepted: [], hybrids: [], synonyms: {}, listed: [] };
+      targets[key] = new Map();
+      listed[key] = new Set();
     }
 
     for (const r of this.rows.values()) {
       const key = r.genus.toLowerCase();
       const g = genera[key];
       if (!g) continue; // fetched only to resolve a synonym
-      if (r.status === "Accepted") {
+      if (ACCEPTED_STATUSES.has(r.status)) {
         if (!g.accepted.includes(r.species)) g.accepted.push(r.species);
         if (r.hybrid && !g.hybrids.includes(r.species)) g.hybrids.push(r.species);
       } else if (SYNONYM_STATUSES.has(r.status)) {
         const target = this.rows.get(r.acceptedId);
-        if (!target || target.status !== "Accepted") continue;
+        if (!target || !ACCEPTED_STATUSES.has(target.status)) {
+          listed[key].add(r.species); // accepted form is below species rank or outside the file
+          continue;
+        }
         const sameGenus = target.genus.toLowerCase() === key;
-        g.synonyms[r.species] = sameGenus ? target.species : `${target.genus} ${target.species}`;
+        const to = sameGenus ? target.species : `${target.genus} ${target.species}`;
+        const seen = targets[key].get(r.species) ?? new Set<string>();
+        seen.add(to);
+        targets[key].set(r.species, seen);
+      } else if (LISTED_ONLY_STATUSES.has(r.status)) {
+        listed[key].add(r.species);
       }
     }
 
-    for (const g of Object.values(genera)) {
+    for (const [key, g] of Object.entries(genera)) {
+      const acceptedSet = new Set(g.accepted);
+      for (const [epithet, seen] of targets[key]) {
+        if (acceptedSet.has(epithet)) continue; // an accepted name always wins
+        if (seen.size === 1) g.synonyms[epithet] = [...seen][0];
+        else listed[key].add(epithet); // two homonyms point to different names: offer nothing
+      }
+      g.listed = [...listed[key]].filter((e) => !acceptedSet.has(e) && !(e in g.synonyms)).sort();
       g.accepted.sort();
       g.hybrids.sort();
       g.synonyms = Object.fromEntries(Object.entries(g.synonyms).sort(([a], [b]) => a.localeCompare(b)));

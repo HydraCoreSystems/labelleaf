@@ -20,6 +20,15 @@ const ROWS = [
   line("7", "Species", "Misapplied", "Fixtureleaf", "", "Misapplied", "1"),
   // The accepted name for row 4 lives in a genus the app does not cover.
   line("9", "Species", "Accepted", "Elsewhere", "", "Delta", "9"),
+  line("10", "Species", "Artificial Hybrid", "Fixtureleaf", "×", "Madeup", "10"),
+  line("11", "Species", "Unplaced", "Fixtureleaf", "", "Unsure", ""),
+  // Two homonyms with different targets: nothing can be offered for "twin".
+  line("12", "Species", "Illegitimate", "Fixtureleaf", "", "Twin", "1"),
+  line("13", "Species", "Illegitimate", "Fixtureleaf", "", "Twin", "2"),
+  // A synonym whose name is also an accepted name: the accepted name wins.
+  line("14", "Species", "Synonym", "Fixtureleaf", "", "Alpha", "2"),
+  // A synonym whose target is not a species rank row.
+  line("15", "Species", "Synonym", "Fixtureleaf", "", "Lowrank", "5"),
 ];
 
 function run(genera: string[]) {
@@ -44,8 +53,8 @@ describe("WCVP importer", () => {
 
   it("keeps accepted species of the covered genus, lowercase and sorted", () => {
     const { data } = run(["Fixtureleaf"]);
-    expect(data.genera.fixtureleaf.accepted).toEqual(["alpha", "hybridia"]);
-    expect(data.genera.fixtureleaf.hybrids).toEqual(["hybridia"]);
+    expect(data.genera.fixtureleaf.accepted).toEqual(["alpha", "hybridia", "madeup"]);
+    expect(data.genera.fixtureleaf.hybrids).toEqual(["hybridia", "madeup"]);
   });
 
   it("maps synonyms to their accepted name", () => {
@@ -56,7 +65,8 @@ describe("WCVP importer", () => {
   it("resolves a synonym whose accepted name sits in an uncovered genus", () => {
     const { acc, data } = run(["Fixtureleaf"]);
     expect(data.genera.fixtureleaf.synonyms.movedone).toBe("Elsewhere delta");
-    expect(acc.missingIds().size).toBe(0);
+    // Only the synonym aimed at a subspecies row stays unresolved.
+    expect([...acc.missingIds()]).not.toContain("9");
   });
 
   it("skips other ranks, uncovered genera, and misapplied names", () => {
@@ -70,5 +80,36 @@ describe("WCVP importer", () => {
     const { data } = run(["Fixtureleaf"]);
     expect(data.source).toBe("fixture");
     expect(data.version).toBe("test");
+  });
+
+  it("counts an Artificial Hybrid as an accepted hybrid", () => {
+    const g = run(["Fixtureleaf"]).data.genera.fixtureleaf;
+    expect(g.accepted).toContain("madeup");
+    expect(g.hybrids).toContain("madeup");
+  });
+
+  it("records unplaced and misapplied names as listed, not as accepted", () => {
+    const g = run(["Fixtureleaf"]).data.genera.fixtureleaf;
+    expect(g.listed).toContain("unsure");
+    expect(g.listed).toContain("misapplied");
+    expect(g.accepted).not.toContain("unsure");
+  });
+
+  it("offers no replacement when two names share an epithet and point apart", () => {
+    const g = run(["Fixtureleaf"]).data.genera.fixtureleaf;
+    expect(g.synonyms.twin).toBeUndefined();
+    expect(g.listed).toContain("twin");
+  });
+
+  it("lets an accepted name win over a synonym with the same epithet", () => {
+    const g = run(["Fixtureleaf"]).data.genera.fixtureleaf;
+    expect(g.synonyms.alpha).toBeUndefined();
+    expect(g.accepted).toContain("alpha");
+  });
+
+  it("lists a synonym whose accepted form is below species rank", () => {
+    const g = run(["Fixtureleaf"]).data.genera.fixtureleaf;
+    expect(g.synonyms.lowrank).toBeUndefined();
+    expect(g.listed).toContain("lowrank");
   });
 });

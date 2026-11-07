@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CULTIVARS, KEW, coveredGenera } from "../data";
 import { useApp } from "../state/AppState";
-import { Body, Caption, Card, Heading, Input, Note, Pill } from "../ui/components";
+import { usePurchases } from "../state/Purchases";
+import { iapAvailable, manage, restore } from "../services/iap";
+import { Body, Button, Caption, Card, Heading, Input, Note, Pill } from "../ui/components";
 import { COPY } from "../ui/copy";
 import { fonts, space, theme } from "../ui/theme";
 
@@ -11,6 +13,8 @@ export default function SettingsScreen() {
   const { state, setUsualGenus } = useApp();
   const kewGenera = coveredGenera(KEW);
   const registerGenera = coveredGenera(CULTIVARS);
+  const { unlimited, left, setEntitlement } = usePurchases();
+  const [note, setNote] = useState("");
 
   return (
     <SafeAreaView style={styles.screen} edges={["bottom"]}>
@@ -52,6 +56,33 @@ export default function SettingsScreen() {
           <View style={styles.register}>
             <Body>{registerGenera.length ? COPY.settings.registerSome(registerGenera) : COPY.settings.registerNone}</Body>
           </View>
+        </Card>
+
+        <Card style={styles.group}>
+          <Heading first rule>{COPY.plan.title}</Heading>
+          <Body>{unlimited ? COPY.plan.active : COPY.plan.free(left)}</Body>
+          {iapAvailable() ? (
+            <View style={styles.help}>
+              {unlimited ? (
+                <Button kind="secondary" label={COPY.plan.manage} onPress={() => void manage().catch(() => undefined)} />
+              ) : (
+                <Button
+                  kind="secondary"
+                  label={COPY.paywall.restore}
+                  onPress={() => {
+                    setNote("");
+                    restore()
+                      .then((e) => {
+                        setEntitlement(e);
+                        if (e.until === null || e.until <= Date.now()) setNote(COPY.paywall.nothingToRestore);
+                      })
+                      .catch(() => setNote(COPY.paywall.storeDown));
+                  }}
+                />
+              )}
+              {note ? <Note>{note}</Note> : null}
+            </View>
+          ) : null}
         </Card>
 
         <Text style={styles.privacy}>{COPY.settings.privacy}</Text>

@@ -1,3 +1,4 @@
+import { FREE_LABELS } from "../core/counter";
 // Every word the grower reads in the app. House rules: plain words, short
 // sentences, US spelling, and no dash or hyphen characters. A test reads this
 // whole file's output and fails if a dash slips in.
@@ -103,6 +104,45 @@ export const COPY = {
       [" and turn off Fit to Page.", false],
     ] as readonly (readonly [string, boolean])[],
     calibrate: "Calibrate",
+    freeLeft: (n: number) => (n === 1 ? "1 free label left." : `${n} free labels left.`),
+  },
+
+  paywall: {
+    title: "LabelLeaf Unlimited",
+    // needed is the size of the run that was blocked, left is what the free count still holds.
+    body: (left: number, needed: number | null) =>
+      needed === null
+        ? `Your first ${FREE_LABELS} printed labels were free. Keep printing with a plan.`
+        : `Your first ${FREE_LABELS} printed labels were free. This run has ${needed} and you have ${left} left. Keep printing with a plan.`,
+    everything: "Every feature works the same, free or not.",
+    kept: "Your queue and your names stay exactly as they are.",
+    monthly: "Monthly",
+    annual: "Yearly",
+    buy: "Choose",
+    notNow: "Not now",
+    storeDown: "The store could not be reached. Your labels and your count are safe. Try again in a moment.",
+    tryAgain: "Try again",
+    restore: "Restore purchases",
+    restoring: "Checking",
+    nothingToRestore: "No active plan was found to restore.",
+    terms: [
+      "Payment is charged to your Apple Account at confirmation of purchase.",
+      "A subscription renews automatically unless it is turned off at least 24 hours before the end of the current period.",
+      "Your account is charged for renewal within 24 hours before the end of the current period.",
+      "Manage or cancel any time in your Apple Account settings.",
+    ],
+    termsLink: "Terms of use",
+    privacyLink: "Privacy policy",
+    perYear: (price: string) => `${price} a year`,
+    perMonth: (price: string) => `${price} a month`,
+  },
+
+  plan: {
+    title: "Your plan",
+    free: (left: number) => `Free plan. ${left} of ${FREE_LABELS} free labels left.`,
+    active: "LabelLeaf Unlimited is active. Print as many labels as you like.",
+    manage: "Manage subscription",
+    seePlans: "See plans",
   },
 
   calibrate: {

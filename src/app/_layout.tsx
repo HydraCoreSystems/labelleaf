@@ -11,6 +11,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
 import { AppStateProvider } from "../state/AppState";
+import { PurchasesProvider } from "../state/Purchases";
 import { COPY } from "../ui/copy";
 import { Mark } from "../ui/icons";
 import { theme, type } from "../ui/theme";
@@ -47,6 +48,7 @@ export default function RootLayout() {
 
   return (
     <AppStateProvider>
+      <PurchasesProvider>
       {ready ? (
         <>
           <StatusBar style="dark" />
@@ -74,11 +76,13 @@ export default function RootLayout() {
             <Stack.Screen name="add" options={{ title: COPY.add.titleNew, presentation: "modal" }} />
             <Stack.Screen name="cuttings" options={{ title: COPY.cuttings.title, presentation: "modal" }} />
             <Stack.Screen name="print" options={{ title: COPY.print.title }} />
+            <Stack.Screen name="paywall" options={{ title: COPY.paywall.title, presentation: "modal" }} />
             <Stack.Screen name="calibrate" options={{ title: COPY.calibrate.title }} />
             <Stack.Screen name="settings" options={{ title: COPY.settings.title }} />
           </Stack>
         </>
       ) : null}
+      </PurchasesProvider>
     </AppStateProvider>
   );
 }

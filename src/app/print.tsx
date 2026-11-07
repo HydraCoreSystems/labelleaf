@@ -6,7 +6,9 @@ import { TEMPLATE_ORDER, TEMPLATES, isPrintable, resolveOffsets } from "../core/
 import { planRun, slotStates, type SlotState } from "../picker/slots";
 import { buildLabelPdf } from "../pdf/sheet";
 import { toLabelContent } from "../queue/queue";
+import { printGate, labelsInRun } from "../core/counter";
 import { printPdf } from "../services/output";
+import { usePurchases } from "../state/Purchases";
 import { useApp } from "../state/AppState";
 import {
   Band,
@@ -29,6 +31,7 @@ import { fonts, radius, shadow, theme, type } from "../ui/theme";
 
 export default function PrintScreen() {
   const { state, setTemplate } = useApp();
+  const { counter, unlimited, left, countLabels } = usePurchases();
   const template = TEMPLATES[state.settings.templateId];
   const printable = isPrintable(template);
   const offsets = resolveOffsets(template, state.offsets[template.id]);
@@ -50,10 +53,19 @@ export default function PrintScreen() {
 
   async function doPrint() {
     setError("");
+    // The one gate. A run that does not fit the free count opens the paywall and prints nothing.
+    const labels = labelsInRun(items.length);
+    const gate = printGate(counter, unlimited, labels);
+    if (!gate.allowed) {
+      router.push({ pathname: "/paywall", params: { needed: String(gate.needed) } });
+      return;
+    }
     setBusy(true);
     try {
       const built = await buildLabelPdf({ template, offsets, items: items.map(toLabelContent), startSlot: plan.startSlot });
       await printPdf(built.bytes);
+      // Counted only now: the print dialog finished without being cancelled or failing.
+      countLabels(labels);
     } catch {
       setError(COPY.print.failed);
     } finally {
@@ -162,6 +174,7 @@ export default function PrintScreen() {
             <Band tone="warn" style={styles.actual}>
               <RichBody parts={COPY.print.actualSize} />
             </Band>
+            {!unlimited ? <Note>{COPY.print.freeLeft(left)}</Note> : null}
             <Button tall label={busy ? COPY.print.working : COPY.print.button} disabled={busy || items.length === 0} onPress={doPrint} />
             <View style={styles.gap} />
             <Button kind="secondary" label={COPY.print.calibrate} onPress={() => router.push("/calibrate")} />

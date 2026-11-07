@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   slotBlank: { backgroundColor: theme.blank },
   slotIdle: { backgroundColor: theme.slotIdle, borderStyle: "dashed", borderColor: theme.borderStrong },
   slotChosen: { borderWidth: 3, borderColor: theme.clay, borderStyle: "solid" },
-  legend: { flexDirection: "row", gap: 16, marginTop: 14, marginBottom: 14 },
+  legend: { flexDirection: "row", flexWrap: "wrap", columnGap: 16, rowGap: 8, marginTop: 14, marginBottom: 14 },
   plan: { marginBottom: 12 },
   tip: { marginTop: 4 },
   tipText: { marginTop: 6 },

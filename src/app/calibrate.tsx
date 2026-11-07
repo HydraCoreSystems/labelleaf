@@ -91,8 +91,8 @@ export default function CalibrateScreen() {
           <View style={styles.compassRow}>
             {pad("left", COPY.calibrate.moveLeft, () => nudge(-OFFSET_STEP_IN, 0))}
             <View style={[styles.cell, styles.center]}>
-              <Text style={styles.centerText} numberOfLines={1} adjustsFontSizeToFit>{short.sideways}</Text>
-              <Text style={styles.centerText} numberOfLines={1} adjustsFontSizeToFit>{short.vertical}</Text>
+              <Text style={styles.centerText} numberOfLines={1} adjustsFontSizeToFit allowFontScaling={false}>{short.sideways}</Text>
+              <Text style={styles.centerText} numberOfLines={1} adjustsFontSizeToFit allowFontScaling={false}>{short.vertical}</Text>
             </View>
             {pad("right", COPY.calibrate.moveRight, () => nudge(OFFSET_STEP_IN, 0))}
           </View>

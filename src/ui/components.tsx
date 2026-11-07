@@ -71,6 +71,7 @@ export function Button({
       {icon ? <View style={styles.buttonIcon}>{icon}</View> : null}
       <Text
         style={[
+          styles.buttonLabel,
           small ? type.buttonSmall : type.button,
           { color: kind === "primary" ? theme.surface : kind === "danger" ? theme.warn : kind === "secondary" ? theme.accentDark : theme.accent },
         ]}
@@ -414,6 +415,7 @@ export function LegendItem({ label, fill, dashed }: { label: string; fill: strin
 const styles = StyleSheet.create({
   button: { borderRadius: radius.button, alignItems: "center", justifyContent: "center", flexDirection: "row" },
   buttonIcon: { marginRight: 8 },
+  buttonLabel: { flexShrink: 1, textAlign: "center" },
   card: {
     backgroundColor: theme.surface,
     borderColor: theme.border,
@@ -432,7 +434,7 @@ const styles = StyleSheet.create({
     minHeight: 56,
     paddingHorizontal: 16,
   },
-  pill: { height: 24, paddingHorizontal: 10, borderRadius: radius.pill, justifyContent: "center", alignSelf: "flex-start" },
+  pill: { minHeight: 24, paddingVertical: 2, paddingHorizontal: 10, flexShrink: 0, borderRadius: radius.pill, justifyContent: "center", alignSelf: "flex-start" },
   badgeText: { fontFamily: fonts.bodySemi, fontSize: 12 },
   pillText: { fontFamily: fonts.bodySemi, fontSize: 13 },
   rule: { width: 24, height: 2, backgroundColor: theme.gold, marginTop: 6 },
@@ -455,17 +457,17 @@ const styles = StyleSheet.create({
   previewText: { flex: 1 },
   empty: { alignItems: "center", paddingVertical: 32, paddingHorizontal: 24 },
   emptyAction: { alignSelf: "stretch", marginTop: 20 },
-  segmented: { flexDirection: "row", backgroundColor: theme.surfaceAlt, borderRadius: radius.button, height: 48, padding: 3 },
-  segment: { flex: 1, borderRadius: radius.button - 3, alignItems: "center", justifyContent: "center" },
+  segmented: { flexDirection: "row", backgroundColor: theme.surfaceAlt, borderRadius: radius.button, minHeight: 48, padding: 3 },
+  segment: { flex: 1, minHeight: 42, paddingHorizontal: 6, borderRadius: radius.button - 3, alignItems: "center", justifyContent: "center" },
   stepper: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
-  stepButton: { width: 64, minHeight: 52 },
+  stepButton: { minWidth: 64, minHeight: 52 },
   stepValue: { flex: 1, textAlign: "center" },
   chip: {
     backgroundColor: theme.surfaceAlt,
     borderColor: theme.border,
     borderWidth: 1,
     borderRadius: radius.chip,
-    height: 36,
+    minHeight: 36,
     minWidth: 72,
     paddingHorizontal: 12,
     alignItems: "center",
@@ -483,6 +485,6 @@ const styles = StyleSheet.create({
   radioFill: { width: 10, height: 10, borderRadius: 5, backgroundColor: theme.accent },
   diagram: { width: 36, flexDirection: "row", flexWrap: "wrap", gap: 3 },
   diagramCell: { width: 10, height: 7, borderRadius: 2, borderWidth: 1, borderColor: theme.borderStrong },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
   swatch: { width: 14, height: 14, borderRadius: 4 },
 });

@@ -75,7 +75,7 @@ export default function QueueScreen() {
             <View style={styles.brandRow}>
               <View style={styles.brand}>
                 <Mark size={28} />
-                <Text style={type.wordmark}>{COPY.appName}</Text>
+                <Text style={[type.wordmark, styles.wordmark]}>{COPY.appName}</Text>
               </View>
               <Button kind="plain" label={COPY.queue.settings} onPress={() => router.push("/settings")} />
             </View>
@@ -202,8 +202,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.bg },
   list: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 16 },
   header: { marginBottom: 16 },
-  brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
-  brand: { flexDirection: "row", alignItems: "center", gap: 8 },
+  brandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8 },
+  brand: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  wordmark: { flexShrink: 1 },
   count: { marginTop: 6, marginBottom: 16 },
   warn: { marginTop: 12 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },

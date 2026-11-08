@@ -8,4 +8,4 @@ export const TERMS_URL = "https://www.apple.com/legal/internet-services/itunes/d
  * The privacy page, served from this repo's docs folder by GitHub Pages, the way the sibling apps do it.
  * It is live only once Pages is switched on for the repo. Changing the address is this one line.
  */
-export const PRIVACY_URL = "https://hydracoresystems.github.io/labelleaf/privacy.html";
+export const PRIVACY_URL = "https://gatheringmoss.shop/pages/labelleaf-privacy-policy";

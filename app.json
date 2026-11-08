@@ -7,7 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.gatheringmoss.labelleaf",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +21,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.labelleaf"
+      "package": "com.gatheringmoss.labelleaf"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -49,6 +53,12 @@
       ],
       "expo-secure-store",
       "expo-iap"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8f6cd6f0-32f2-439c-89fa-57ba916e0cbc"
+      }
+    },
+    "owner": "gatheringmossphils-team"
   }
 }
